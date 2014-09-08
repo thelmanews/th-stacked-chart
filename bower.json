@@ -1,0 +1,14 @@
+{
+  "name": "th-stacked-chart",
+  "version": "0.0.0",
+  "keywords": "seed, polymer, web-components",
+  "main": "th-stacked-chart.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#0.3.4",
+    "platform": "Polymer/platform#0.3.4",
+    "d3": "latest",
+    "th-animated": "https://github.com/thelmanews/th-animated.git",
+    "th-theme": "https://github.com/thelmanews/th-theme.git",
+    "th-d3-chart": "https://github.com/thelmanews/th-d3-chart.git"
+  }
+}
