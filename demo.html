@@ -13,13 +13,27 @@
 
   <script src="../webcomponentsjs/webcomponents.js"></script>
   <link rel="import" href="th-stacked-chart.html">
+  <style>
+    * /deep/ .label {font-size: 1.8em;}
+    * /deep/ .value {font-size: 1.8em;}
+    .container {
+      width: 500px;
+      height: 500px;
+      border: 1px dotted #EEE;
+    }
+    th-stacked-chart {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 
 </head>
 <body unresolved>
 
   <p>An example of using <code>&lt;th-stacked-chart></code>:</p>
-
-  <th-stacked-chart animateOnInit="true"></th-stacked-chart>
+  <div class="container">
+    <th-stacked-chart animateOnInit="true"></th-stacked-chart>
+  </div>
 
 </body>
 </html>
