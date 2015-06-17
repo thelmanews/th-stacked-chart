@@ -47,7 +47,7 @@
 	<script>
 
 		Polymer('th-stacked-chart', {
-			chartData: [{label: 'medicaid', value: 20, display_value: '', color:'', offset: 0},{label: 'gap', value: 40, display_value: '', color:'', offset: 0},{label: 'sub', value: 0.1, display_value: '', color:'', offset: 5}], 
+			chartData: [{label: 'medicaid', value: 20, display_value: '', color:'', offset: 0},{label: 'gap', value: 40, display_value: '', color:'', offset: 0},{label: 'sub', value: 0.1, display_value: '0.2%', color:'', offset: 15}], 
 		  init: function() {
 		      var self = this;
 		      
@@ -60,7 +60,10 @@
 		          barWidth = self.dims.bar.width;
 
 		      self.MIN_BAR_HEIGHT = 5;
-		      var scaleHeight = height - (self.MIN_BAR_HEIGHT*self.chartData.length);
+		      var BOTTOM_GAP = 10; // to avoid cuts in the bottom
+		      var scaleHeight = height - (self.MIN_BAR_HEIGHT*self.chartData.length) - BOTTOM_GAP 
+		      								- self.dims.labels.height; //room for total
+
 
 		      // setup scales
 		      var scales = self.simpleScaleBuilder(width, scaleHeight, self.chartData),
@@ -76,7 +79,6 @@
 		          total+=parseFloat(d.value);
 		      });
 
-		      console.log(self.chartData);
 
 		      self.y.domain([0, total]); 
 			      
@@ -85,7 +87,8 @@
 		      self.svg = d3.select(chart_svg);
 
 
-		      self.container = self.svg.append('g');
+		      self.container = self.svg.append('g')
+		      								.attr('class', 'chart-container');
 
 
 	      // set up initial state of data
@@ -111,6 +114,26 @@
 
 		      self.valueGroups = self.values.select(function() {return this.parentNode.parentNode; }).attr('class','valueg');
 
+		      self.totalg = self.svg.append('g')
+		      		.attr('class', 'totals')
+		      		.style('opacity', 0)
+		      		.attr('transform', 'translate(0,-' +(height -self.dims.labels.height) +' )')
+
+		      self.totalg.append('text')
+		      		.attr('class', 'label')
+		      		.style('text-anchor', 'end')
+    					.attr('transform',function(d) {
+			        	return 'translate('+self.dims.labels.containerWidth + self.dims.margin.label*2+','+self.dims.height+')';})
+			        .text('Total'); 
+
+		      self.totalg.append('text')
+		      		.attr('class', 'value wrapped-values')
+    					.attr('transform',function(d) {
+			        	var xx = self.dims.labels.containerWidth + self.dims.margin.label*2 + self.dims.bar.width;
+			        	//var xx = 0;
+			        	return 'translate('+xx+','+self.dims.height+')';}) 
+			        .text(total.toFixed(2)); 
+
 
 		      self._setElementSizes();
 
@@ -118,9 +141,6 @@
 		      self.bars.attr('y', self.dims.height)
 			        .attr('height', 0);
 
-			  // self.labels.style('opacity', 0);
-
-			  // self.values.style('opacity', 0);
 	      
 
 		  },
@@ -132,8 +152,8 @@
 		      self.svg.attr('width', self.dims.width + self.dims.margin.left + self.dims.margin.right)
 		          .attr('height', self.dims.height + self.dims.margin.top + self.dims.margin.bottom);
 
-
-	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + ')');
+		      // adding self.dims.labels.height to make room for total.
+	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + self.dims.labels.height + ')');
 
 		  	  self.bars
 		        .attr("class", function(d,i){ return "bar data"+i; })
@@ -277,7 +297,6 @@
 		  animate: function() {
             var self = this;
 		        var y = self.y;
-		        console.log("stacked animate");
 		        self.bars.transition().duration(self.animationDelay)
 			        .attr('x', self.dims.width/2 - self.dims.bar.width/2)
 			        .attr('width', self.dims.bar.width)
@@ -303,6 +322,9 @@
 		        	var xPos = self.dims.labels.containerWidth + self.dims.margin.label*2 + self.dims.bar.width;
 		        	return 'translate('+xPos+','+yPos+')'; 
 		        });
+
+		        self.totalg.transition().delay(self.animationDelay).duration(self.animationDelay).style('opacity', 1);
+
 		        
 
 		  },
