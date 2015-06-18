@@ -60,9 +60,10 @@
 		          barWidth = self.dims.bar.width;
 
 		      self.MIN_BAR_HEIGHT = 5;
+		      self.TOTAL_ADDITIONAL_MARGIN = 1.5;
 		      var BOTTOM_GAP = 10; // to avoid cuts in the bottom
 		      var scaleHeight = height - (self.MIN_BAR_HEIGHT*self.chartData.length) - BOTTOM_GAP 
-		      								- self.dims.labels.height; //room for total
+		      								- self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN; //room for total
 
 
 		      // setup scales
@@ -117,7 +118,7 @@
 		      self.totalg = self.svg.append('g')
 		      		.attr('class', 'totals')
 		      		.style('opacity', 0)
-		      		.attr('transform', 'translate(0,-' +(height -self.dims.labels.height) +' )')
+		      		.attr('transform', 'translate(0,-' +(height -self.dims.labels.height ) +' )')
 
 		      self.totalg.append('text')
 		      		.attr('class', 'label')
@@ -153,7 +154,7 @@
 		          .attr('height', self.dims.height + self.dims.margin.top + self.dims.margin.bottom);
 
 		      // adding self.dims.labels.height to make room for total.
-	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + self.dims.labels.height + ')');
+	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN + ')');
 
 		  	  self.bars
 		        .attr("class", function(d,i){ return "bar data"+i; })
