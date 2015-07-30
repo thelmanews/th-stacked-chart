@@ -2,7 +2,7 @@
 <link rel="import" href="../th-d3-chart/th-d3-chart.html">
 
 
-<polymer-element name="th-stacked-chart" extends="th-d3-chart">
+<polymer-element name="th-stacked-chart" extends="th-d3-chart" attrubutes="showTotal">
 
 	<template>
 	    <core-style ref="theme"></core-style>
@@ -48,7 +48,8 @@
 
 		Polymer('th-stacked-chart', {
 			chartData: [{label: 'medicaid', value: 20, display_value: '', color:'', offset: 0},{label: 'gap', value: 40, display_value: '', color:'', offset: 0},{label: 'sub', value: 0.1, display_value: '0.2%', color:'', offset: 15}], 
-		  init: function() {
+      showTotal: false,
+      init: function() {
 		      var self = this;
 		      
 		      // setup dimensions
@@ -62,9 +63,12 @@
 		      self.MIN_BAR_HEIGHT = 5;
 		      self.TOTAL_ADDITIONAL_MARGIN = 1.5;
 		      var BOTTOM_GAP = 10; // to avoid cuts in the bottom
-		      var scaleHeight = height - (self.MIN_BAR_HEIGHT*self.chartData.length) - BOTTOM_GAP 
-		      								- self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN; //room for total
+		      var scaleHeight = height - (self.MIN_BAR_HEIGHT*self.chartData.length) - BOTTOM_GAP;
 
+          if(self.showTotal) {
+
+		      		scaleHeight = scaleHeight - self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN; //room for total
+          }
 
 		      // setup scales
 		      var scales = self.simpleScaleBuilder(width, scaleHeight, self.chartData),
@@ -115,7 +119,8 @@
 
 		      self.valueGroups = self.values.select(function() {return this.parentNode.parentNode; }).attr('class','valueg');
 
-		      self.totalg = self.svg.append('g')
+          if(self.showTotal) {
+          self.totalg = self.svg.append('g')
 		      		.attr('class', 'totals')
 		      		.style('opacity', 0)
 		      		.attr('transform', 'translate(0,-' +(height -self.dims.labels.height ) +' )')
@@ -135,6 +140,7 @@
 			        	return 'translate('+xx+','+self.dims.height+')';}) 
 			        .text(total.toFixed(2)); 
 
+          }
 
 		      self._setElementSizes();
 
@@ -324,9 +330,11 @@
 		        	return 'translate('+xPos+','+yPos+')'; 
 		        });
 
-		        self.totalg.transition().delay(self.animationDelay).duration(self.animationDelay).style('opacity', 1);
+            
+          if(self.showTotal) {
+              self.totalg.transition().delay(self.animationDelay).duration(self.animationDelay).style('opacity', 1);
 
-		        
+          }  
 
 		  },
 		  chartSpecificDataValidate: function() {
@@ -361,6 +369,130 @@
           return errors;
           },
 
+    setupStackedDims: function(self){
+
+      var dims = {},
+          chartData = self.chartData,
+          MIN_WIDTH = 100,
+          MIN_HEIGHT = 150,
+          BAR_MIN_WIDTH = 20,
+          remainingWidth;
+      
+      dims.margin = { top : 0, right : 0, bottom : 8, left : 0, label: 10, };
+      
+      self.computedWidth = self.computeWidth();
+      self.computedHeight = self.computeHeight();
+
+      dims.width = Math.max(MIN_WIDTH,(self.computedWidth - dims.margin.left - dims.margin.right));
+      dims.height = Math.max(MIN_HEIGHT,(self.computedHeight - dims.margin.top - dims.margin.bottom));        
+    
+      dims.bar = {};
+      dims.labels = {};
+      dims.values = {};
+
+
+      var computedMaxLabelWidth, computedMaxLabelWidth,
+          computedMaxValueWidth, computedMaxValueWidth,
+          computedLabelHeight, computedValueHeight;
+
+      var mockLabels = d3.select(self.$.chart).selectAll('.mock').data(chartData);
+      mockLabels.enter().append('text');
+
+      var computedLengths = [];
+
+      mockLabels
+        .style('text-anchor','end')
+        .style('font-size', function(d) { return dims.values.fontSize+'px';})
+      .text(function(d) {return d.label ;})
+        .attr('class', function(d) {
+          return 'label mock';
+        })
+        .attr('mock', function(d) {
+          computedLabelHeight = this.getBBox().height;
+          computedLengths.push(this.getComputedTextLength());
+          return 'mock';
+        });
+
+      d3.select(self.$.chart).selectAll('.mock').remove();
+     
+
+      computedMaxLabelWidth = d3.max(computedLengths);
+      computedLastLabelWidth = computedLengths[computedLengths.length-1];
+
+
+      var mockValues = d3.select(self.$.chart).selectAll('.mock').data(chartData);
+      mockValues.enter().append('text');
+
+      computedLengths = [];
+
+      mockValues
+        .style('text-anchor','end')
+        .style('font-size', function(d) { return dims.values.fontSize+'px';})
+      .text(function(d) {
+          return  d.range_min_display_value + ' - ' +  d.range_max_display_value ||
+                  d.range_min_value + ' - ' +  d.range_max_value ||
+                  d.display_value ||
+                  d.value ;
+        })
+        .attr('class', function(d) {
+          return 'label mock';
+        })
+        .attr('mock', function(d) {
+          computedValueHeight = this.getBBox().height;
+          computedLengths.push(this.getComputedTextLength());
+          dims.labels.height = computedHeight = this.getBBox().height;
+          return 'mock';
+        });
+
+      d3.select(self.$.chart).selectAll('.mock').remove();
+     
+
+      computedMaxValueWidth = d3.max(computedLengths);
+      computedLastValueWidth = computedLengths[computedLengths.length-1];
+
+      
+
+
+      do  {
+        //for the first time dims.bar.width is undefined but optimizeSizes takes care of that.
+        var newBarWidth = dims.bar.width * 0.8;
+        optimizeSizes(newBarWidth, computedMaxLabelWidth, computedMaxValueWidth, computedLabelHeight, computedValueHeight);
+
+      } while (((dims.values.lines > 1 && dims.labels.lines > 1) || dims.labels.lines > 3) && dims.bar.width > BAR_MIN_WIDTH)
+      // If both values and labels are wrapping to more than 1 line, attempt to shrink the bar until one side does not have to wrap
+
+      
+      // This function attempts to maximize the width of the bar,
+      // while reducing the number of lines labels and values wrap
+      function optimizeSizes(barWidth, maxLabelWidth, maxValueWidth, labelHeight, valueHeight){
+
+        // Set bar width in proportion to total width
+        remainingWidth = dims.width;
+        dims.bar.width = barWidth || dims.width / 3.25;
+        remainingWidth -= dims.margin.label*2 + dims.bar.width + 2; // Additional 2px of extra margin to account for font variation
+
+        dims.labels.width = maxLabelWidth;
+
+        
+        dims.labels.containerWidth = remainingWidth/2;
+        
+        // times 2: a hack to avoid 2 line labels to be cut-off. there is no harm in having longer foreingObjects        
+        dims.labels.containerHeight = labelHeight * 2; 
+        
+        remainingWidth -= dims.labels.containerWidth;
+
+        dims.values.width = maxValueWidth;
+        dims.values.containerWidth = Math.min(dims.values.width, remainingWidth) + 2;
+
+        dims.values.containerHeight = valueHeight;
+
+      }
+
+      // TODO: add logic to allocation remainingWidth to labels if they are wrapping or to bar
+
+      return dims;
+
+    },
           getMetaData: function() {
           	return {
 						  "name": "th-stacked-chart",
