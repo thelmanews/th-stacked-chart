@@ -48,7 +48,7 @@
 
 		Polymer('th-stacked-chart', {
 			chartData: [{label: 'medicaid', value: 20, display_value: '', color:'', offset: 0},{label: 'gap', value: 40, display_value: '', color:'', offset: 0},{label: 'sub', value: 0.1, display_value: '0.2%', color:'', offset: 15}], 
-      showTotal: false,
+      showTotal: true,
       init: function() {
 		      var self = this;
 		      
@@ -160,7 +160,7 @@
 		          .attr('height', self.dims.height + self.dims.margin.top + self.dims.margin.bottom);
 
 		      // adding self.dims.labels.height to make room for total.
-	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN + ')');
+	        self.container.attr('transform', 'translate(' + self.dims.margin.left + ',' + self.dims.margin.top + (self.showTotal ? (self.dims.labels.height * self.TOTAL_ADDITIONAL_MARGIN) : 0) + ')');
 
 		  	  self.bars
 		        .attr("class", function(d,i){ return "bar data"+i; })
